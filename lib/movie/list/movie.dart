@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:meta/meta.dart';
 
-
 class Movie {
   final String title;
   final String average; //这里解析 double 是报错的，不应该啊？！
@@ -12,7 +11,11 @@ class Movie {
   final String cast;
   final String movieId;
 
-  //构造函数
+  @override
+  String toString() {
+    return 'Movie{title: $title, average: $average, collectCount: $collectCount, smallImage: $smallImage, director: $director, cast: $cast, movieId: $movieId}';
+  } //构造函数
+
   Movie({
     @required this.title,
     @required this.average,
@@ -23,11 +26,14 @@ class Movie {
     @required this.movieId,
   });
 
-  static List<Movie> allFromResponse(String json) {
-    return JSON
-        .decode(json)['subjects']
-        .map((obj) => Movie.fromMap(obj))
-        .toList();
+  static List<Movie> allFromResponse(String mjson) {
+    List<Movie> result = [];
+    List<dynamic> array = json.decode(mjson)['subjects'];
+    for (Map item in array) {
+      result.add(Movie.fromMap(item));
+    }
+    print(result.length);
+    return result;
   }
 
   static Movie fromMap(Map map) {
@@ -59,5 +65,4 @@ class Movie {
       movieId: map['id'],
     );
   }
-
 }

@@ -1,7 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_movie/movie/list/movie.dart';
 import 'package:flutter_movie/movie/detail/movie_detail_page.dart';
+import 'package:flutter_movie/movie/list/movie.dart';
 
 class MovieListPage extends StatefulWidget {
   @override
@@ -30,7 +32,6 @@ class MovieListPageState extends State<MovieListPage> {
       content = new ListView.builder(
         itemCount: movies.length,
         itemBuilder: buildMovieItem,
-
       );
     }
 
@@ -43,42 +44,51 @@ class MovieListPageState extends State<MovieListPage> {
             onPressed: () {
               print('onclick');
             },
-
           )
         ],
       ),
       body: content,
-
     );
   }
 
   // 跳转页面
   navigateToMovieDetailPage(Movie movie, Object imageTag) {
-    Navigator.of(context).push(
-        new MaterialPageRoute(
-            builder: (BuildContext context) {
-              return new MovieDetailPage(movie, imageTag: imageTag);
-            }
-        )
-    );
+    Navigator
+        .of(context)
+        .push(new MaterialPageRoute(builder: (BuildContext context) {
+      return new MovieDetailPage(movie, imageTag: imageTag);
+    }));
+  }
+
+  getMovieList(Map map) async {
+    var httpClient = new HttpClient();
+    var uri = new Uri.https('api.douban.com', '/v2/movie/in_theaters', map);
+    var request = await httpClient.getUrl(uri);
+    var response = await request.close();
+    var responseBody = await response.transform(UTF8.decoder).join();
+    return responseBody;
   }
 
   //网络请求
   getMovieListData() async {
     //createHttpClient() 来自 package:flutter/services.dart，居然不能自己导包。
-    String response = await createHttpClient().read(
-        'https://api.douban.com/v2/movie/in_theaters?'
-            'apikey=0b2bdeda43b5688921839c8ecb20399b&city=%E5%8C%97%E4%BA%AC&'
-            'start=0&count=100&client=&udid=');
+    Map<String, String> params = {
+      "apikey": "0b2bdeda43b5688921839c8ecb20399b",
+      "city": "%E5%8C%97%E4%BA%AC",
+      "start": "0",
+      "count": "100",
+      "client": "",
+      "udid": ""
+    };
 
+    String response = await getMovieList(params);
     // setState 相当于 runOnUiThread
     setState(() {
       movies = Movie.allFromResponse(response);
     });
   }
 
-
-  buildMovieItem(BuildContext context, int index) {
+  Widget buildMovieItem(BuildContext context, int index) {
     Movie movie = movies[index];
 
     var movieImage = new Padding(
@@ -91,7 +101,8 @@ class MovieListPageState extends State<MovieListPage> {
       child: new Image.network(
         movie.smallImage,
         width: 100.0,
-        height: 120.0,),
+        height: 120.0,
+      ),
     );
 
     var movieMsg = new Column(
@@ -101,9 +112,7 @@ class MovieListPageState extends State<MovieListPage> {
         new Text(
           movie.title,
           textAlign: TextAlign.left,
-          style: new TextStyle(
-              fontWeight: FontWeight.bold, fontSize: 14.0
-          ),
+          style: new TextStyle(fontWeight: FontWeight.bold, fontSize: 14.0),
         ),
         new Text('导演：' + movie.director),
         new Text('主演：' + movie.cast),
@@ -112,7 +121,8 @@ class MovieListPageState extends State<MovieListPage> {
           movie.collectCount.toString() + '人看过',
           style: new TextStyle(
             fontSize: 12.0,
-            color: Colors.redAccent,),
+            color: Colors.redAccent,
+          ),
         ),
       ],
     );
@@ -122,10 +132,8 @@ class MovieListPageState extends State<MovieListPage> {
       onTap: () => navigateToMovieDetailPage(movie, index),
 
       child: new Column(
-
         children: <Widget>[
           new Row(
-
             children: <Widget>[
               movieImage,
               //Expanded 均分
@@ -136,8 +144,8 @@ class MovieListPageState extends State<MovieListPage> {
             ],
           ),
           new Divider(),
-        ],),
-
+        ],
+      ),
     );
 
     return movieItem;
